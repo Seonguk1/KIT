@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+enum Role {
+  student
+  instructor
+  admin
+}
+
+enum CourseStatus {
+  draft
+  open
+  closed
+  archived
+}
+
+enum SessionVisibility {
+  draft
+  published
+  hidden
+}
+
+enum MaterialType {
+  lecture_pdf
+  assignment_pdf
+  quiz_pdf
+  reference
+  other
+}
+
+enum ProcessingStatus {
+  uploaded
+  queued
+  processing
+  completed
+  failed
+}
+
+enum SttStatus {
+  uploaded
+  queued
+  transcribing
+  post_processing
+  completed
+  failed
+}
+
+enum QuizStatus {
+  draft
+  published
+  hidden
+}
+
+enum QuizQuestionType {
+  multiple_choice
+  short_answer
+  ox
+}
+
+enum GenerationJobStatus {
+  queued
+  processing
+  completed
+  failed
+}
+
+model User {
+  id              String   @id @default(cuid())
+  name            String
+  email           String   @unique
+  passwordHash    String?
+  role            Role
+  profileImageUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Course {
+  id               String         @id @default(cuid())
+  title            String
+  description      String?
+  instructorUserId String?
+  startDate        DateTime?
+  endDate          DateTime?
+  capacity         Int?
+  status           CourseStatus   @default(draft)
+  thumbnailUrl     String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+}
+
+model CourseEnrollment {
+  id            String   @id @default(cuid())
+  courseId      String
+  userId        String
+  status        String
+  progressPercent Int     @default(0)
+  appliedAt     DateTime?
+  enrolledAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([userId])
+}
+
+model Session {
+  id          String            @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  orderIndex  Int
+  startAt     DateTime?
+  endAt       DateTime?
+  visibility  SessionVisibility @default(draft)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([courseId])
+}
+
+model Material {
+  id                String           @id @default(cuid())
+  sessionId         String
+  type              MaterialType     @default(lecture_pdf)
+  name              String
+  fileUrl           String
+  mimeType          String
+  pageCount         Int              @default(0)
+  isLocked          Boolean          @default(false)
+  extractEnabled    Boolean          @default(true)
+  processingStatus  ProcessingStatus @default(uploaded)
+  analysisSummary   String?
+  tocStatus         String           @default("pending")
+  pageCountAnalyzed Int              @default(0)
+  lastProcessedAt   DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([sessionId])
+}
+
+model MaterialSection {
+  id              String   @id @default(cuid())
+  materialId      String
+  parentSectionId String?
+  title           String
+  level           Int      @default(1)
+  startPage       Int
+  endPage         Int
+  orderIndex      Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([materialId])
+}
+
+model MaterialPage {
+  id              String   @id @default(cuid())
+  materialId      String
+  pageNumber      Int
+  sectionId       String?
+  topicSentence   String
+  summary         String
+  keywords        Json
+  embeddingStatus String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([materialId])
+  @@index([sectionId])
+}
+
+model Recording {
+  id              String      @id @default(cuid())
+  sessionId       String
+  name            String
+  fileUrl         String
+  durationSeconds Int?
+  language        String?
+  sttEnabled      Boolean     @default(true)
+  sttStatus       SttStatus   @default(uploaded)
+  subtitleUrl     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([sessionId])
+}
+
+model TranscriptSegment {
+  id              String   @id @default(cuid())
+  recordingId     String
+  startMs         Int
+  endMs           Int
+  rawText         String
+  refinedText     String?
+  speakerLabel    String?
+  sectionId       String?
+  pageNumber      Int?
+  confidenceScore Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([recordingId])
+  @@index([sectionId])
+  @@index([pageNumber])
+}
+
+model Quiz {
+  id           String     @id @default(cuid())
+  sessionId    String
+  materialId   String?
+  sectionId    String?
+  title        String
+  generatedBy  String     @default("ai")
+  status       QuizStatus @default(draft)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([sessionId])
+}
+
+model QuizQuestion {
+  id                 String           @id @default(cuid())
+  quizId             String
+  type               QuizQuestionType @default(multiple_choice)
+  questionText       String
+  choices            Json?
+  answer             String
+  explanation        String
+  sourceMaterialId   String?
+  sourcePageNumber   Int?
+  sourceSectionId    String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([quizId])
+}
+
+model QuizAttempt {
+  id         String   @id @default(cuid())
+  quizId     String
+  userId     String?
+  score      Float
+  submittedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([quizId])
+}
+
+model QuizAttemptAnswer {
+  id          String   @id @default(cuid())
+  attemptId   String
+  questionId  String
+  userAnswer  String
+  isCorrect   Boolean
+  earnedScore Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([attemptId])
+  @@index([questionId])
+}
+
+model QuizGenerationJob {
+  id        String              @id @default(cuid())
+  sessionId String
+  status    GenerationJobStatus @default(queued)
+  quizId    String?
+  error     String?
+  count     Int                 @default(5)
+  sectionId String?
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([sessionId])
+}

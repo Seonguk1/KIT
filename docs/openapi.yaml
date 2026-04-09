@@ -1,0 +1,986 @@
+openapi: 3.0.3
+info:
+  title: KIT-contest MVP API
+  version: 0.1.0
+  description: Minimal OpenAPI spec for the KIT-contest MVP core endpoints
+servers:
+  - url: /
+paths:
+  /api/courses:
+    post:
+      summary: Create a new course
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CourseCreateRequest'
+      responses:
+        '201':
+          description: Course created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/courses/{courseId}/sessions:
+    post:
+      summary: Create a new session in a course
+      parameters:
+        - name: courseId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionCreateRequest'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionSummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/upload-urls:
+    post:
+      summary: Issue signed upload URL for storage
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Signed upload URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/materials:
+    post:
+      summary: Create material metadata after upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaterialCreateRequest'
+      responses:
+        '201':
+          description: Material created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/materials/{materialId}:
+    get:
+      summary: Get material metadata and processing status
+      parameters:
+        - name: materialId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Material detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaterialDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/materials/{materialId}/sections:
+    get:
+      summary: List sections (TOC) for a material
+      parameters:
+        - name: materialId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sections list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sections:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Section'
+
+  /api/materials/{materialId}/pages:
+    get:
+      summary: List analyzed pages for a material
+      parameters:
+        - name: materialId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Material pages
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MaterialPage'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/recordings:
+    post:
+      summary: Create recording metadata after upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordingCreateRequest'
+      responses:
+        '201':
+          description: Recording created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingResponse'
+
+  /api/recordings/{recordingId}:
+    get:
+      summary: Get recording metadata and STT status
+      parameters:
+        - name: recordingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recording detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordingDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/recordings/{recordingId}/segments:
+    get:
+      summary: List transcript segments for a recording
+      parameters:
+        - name: recordingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sectionId
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: pageNumber
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        '200':
+          description: Transcript segment list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptSegmentListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/recordings/{recordingId}/segments/{segmentId}:
+    patch:
+      summary: Update a transcript segment mapping or refined text
+      parameters:
+        - name: recordingId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: segmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SegmentPatchRequest'
+      responses:
+        '200':
+          description: Segment updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptSegment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/recordings/{recordingId}/subtitle:
+    get:
+      summary: Get subtitle info or URL for a recording
+      parameters:
+        - name: recordingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subtitle info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subtitleUrl:
+                    type: string
+                  format:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/sessions/{sessionId}:
+    get:
+      summary: Get session detail with materials and recordings
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/qa:
+    post:
+      summary: Synchronous QA request (returns answer with sources)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QARequest'
+      responses:
+        '200':
+          description: QA response with source references
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QAResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/Timeout'
+
+  /api/sessions/{sessionId}/quizzes:
+    post:
+      summary: Auto-generate quiz synchronously for small count (saved as draft)
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizCreateRequest'
+      responses:
+        '201':
+          description: Quiz (draft) created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/Timeout'
+
+  /api/sessions/{sessionId}/quiz-generations:
+    post:
+      summary: Start async quiz generation job
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizCreateRequest'
+      responses:
+        '202':
+          description: Quiz generation job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizGenerationResponse'
+
+  /api/quiz-generations/{jobId}:
+    get:
+      summary: Get quiz generation job status
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quiz generation job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizGenerationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/quizzes/{quizId}/publish:
+    post:
+      summary: Publish a draft quiz
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quiz published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizResponse'
+
+  /api/quizzes/{quizId}:
+    get:
+      summary: Get quiz detail with questions
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quiz detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/quizzes/{quizId}/attempts:
+    post:
+      summary: Submit quiz attempt
+      parameters:
+        - name: quizId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuizAttemptRequest'
+      responses:
+        '201':
+          description: Attempt recorded and scored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuizAttemptResponse'
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Upstream service failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Timeout:
+      description: Request timed out
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    CourseCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        capacity:
+          type: integer
+          minimum: 1
+
+    CourseSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [draft, open, closed, archived]
+        startDate:
+          type: string
+          format: date-time
+          nullable: true
+        endDate:
+          type: string
+          format: date-time
+          nullable: true
+        capacity:
+          type: integer
+          nullable: true
+        sessionCount:
+          type: integer
+        enrollmentCount:
+          type: integer
+
+    SessionCreateRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        visibility:
+          type: string
+          enum: [draft, published, hidden]
+        startAt:
+          type: string
+          format: date-time
+        endAt:
+          type: string
+          format: date-time
+
+    SessionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        orderIndex:
+          type: integer
+        visibility:
+          type: string
+          enum: [draft, published, hidden]
+        startAt:
+          type: string
+          format: date-time
+          nullable: true
+        endAt:
+          type: string
+          format: date-time
+          nullable: true
+        materialCount:
+          type: integer
+        recordingCount:
+          type: integer
+
+    UploadUrlRequest:
+      type: object
+      required: [fileName, contentType, purpose]
+      properties:
+        fileName:
+          type: string
+        contentType:
+          type: string
+        purpose:
+          type: string
+          enum: [material, recording]
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+        fileUrl:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    MaterialCreateRequest:
+      type: object
+      required: [sessionId, name, fileUrl, mimeType]
+      properties:
+        sessionId:
+          type: string
+        name:
+          type: string
+        fileUrl:
+          type: string
+        mimeType:
+          type: string
+        pageCount:
+          type: integer
+        extractEnabled:
+          type: boolean
+        type:
+          type: string
+          enum: [lecture_pdf, assignment_pdf, quiz_pdf, reference, other]
+
+    MaterialResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        processingStatus:
+          $ref: '#/components/schemas/ProcessingStatus'
+
+    MaterialDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        name:
+          type: string
+        fileUrl:
+          type: string
+        mimeType:
+          type: string
+        pageCount:
+          type: integer
+        extractEnabled:
+          type: boolean
+        processingStatus:
+          $ref: '#/components/schemas/ProcessingStatus'
+        analysis:
+          $ref: '#/components/schemas/MaterialAnalysis'
+
+    MaterialAnalysis:
+      type: object
+      properties:
+        analysisSummary:
+          type: string
+        tocStatus:
+          type: string
+          enum: [pending, completed, failed]
+        pageCountAnalyzed:
+          type: integer
+        lastProcessedAt:
+          type: string
+          format: date-time
+
+    Section:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        startPage:
+          type: integer
+        endPage:
+          type: integer
+
+    RecordingCreateRequest:
+      type: object
+      required: [sessionId, name, fileUrl]
+      properties:
+        sessionId:
+          type: string
+        name:
+          type: string
+        fileUrl:
+          type: string
+        durationSeconds:
+          type: integer
+        language:
+          type: string
+        sttEnabled:
+          type: boolean
+
+    RecordingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        sttStatus:
+          $ref: '#/components/schemas/SttStatus'
+
+    RecordingDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        sessionId:
+          type: string
+        name:
+          type: string
+        fileUrl:
+          type: string
+        durationSeconds:
+          type: integer
+        sttStatus:
+          $ref: '#/components/schemas/SttStatus'
+        subtitleUrl:
+          type: string
+
+    TranscriptSegment:
+      type: object
+      properties:
+        id:
+          type: string
+        startMs:
+          type: integer
+        endMs:
+          type: integer
+        rawText:
+          type: string
+        refinedText:
+          type: string
+        sectionId:
+          type: string
+        pageNumber:
+          type: integer
+        mappingScore:
+          type: number
+
+    TranscriptSegmentListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/TranscriptSegment'
+        nextCursor:
+          type: string
+          nullable: true
+
+    SegmentPatchRequest:
+      type: object
+      properties:
+        refinedText:
+          type: string
+        sectionId:
+          type: string
+        pageNumber:
+          type: integer
+
+    MaterialPage:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+        sectionId:
+          type: string
+        topicSentence:
+          type: string
+        summary:
+          type: string
+        keywords:
+          type: array
+          items:
+            type: string
+
+    MaterialSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        processingStatus:
+          $ref: '#/components/schemas/ProcessingStatus'
+
+    RecordingSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        sttStatus:
+          $ref: '#/components/schemas/SttStatus'
+        subtitleUrl:
+          type: string
+
+    SessionDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        courseId:
+          type: string
+        title:
+          type: string
+        visibility:
+          type: string
+          enum: [draft, published, hidden]
+        materials:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaterialSummary'
+        recordings:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecordingSummary'
+
+    QARequest:
+      type: object
+      required: [sessionId, question]
+      properties:
+        sessionId:
+          type: string
+        question:
+          type: string
+        topK:
+          type: integer
+
+    SourceRef:
+      type: object
+      properties:
+        materialId:
+          type: string
+        sectionId:
+          type: string
+        pageNumber:
+          type: integer
+        startMs:
+          type: integer
+        endMs:
+          type: integer
+        snippet:
+          type: string
+        score:
+          type: number
+
+    QAResponse:
+      type: object
+      properties:
+        answer:
+          type: string
+        sourceRefs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceRef'
+        confidence:
+          type: number
+
+    QuizCreateRequest:
+      type: object
+      properties:
+        sectionId:
+          type: string
+        count:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 5
+
+    QuizResponse:
+      type: object
+      properties:
+        quizId:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, hidden]
+
+    QuizQuestion:
+      type: object
+      properties:
+        id:
+          type: string
+        questionText:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        explanation:
+          type: string
+        sourcePageNumber:
+          type: integer
+          nullable: true
+
+    QuizDetailResponse:
+      type: object
+      properties:
+        quizId:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, hidden]
+        title:
+          type: string
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuizQuestion'
+
+    QuizGenerationResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        quizId:
+          type: string
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    QuizAttemptRequest:
+      type: object
+      required: [answers]
+      properties:
+        userId:
+          type: string
+        answers:
+          type: array
+          items:
+            type: object
+            properties:
+              questionId:
+                type: string
+              answer:
+                type: string
+
+    QuizAttemptResponse:
+      type: object
+      properties:
+        attemptId:
+          type: string
+        score:
+          type: number
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
+    ProcessingStatus:
+      type: string
+      enum: [uploaded, queued, processing, completed, failed]
+
+    SttStatus:
+      type: string
+      enum: [uploaded, queued, transcribing, post_processing, completed, failed]
+
+  securitySchemes: {}
+
