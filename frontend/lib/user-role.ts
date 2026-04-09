@@ -27,3 +27,11 @@ export function setStoredUserRole(role: UserRole) {
 
   window.localStorage.setItem(USER_ROLE_STORAGE_KEY, role);
 }
+
+export function clearStoredUserRole() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(USER_ROLE_STORAGE_KEY);
+}

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RoleSelectModal } from "@/components/role-select-modal";
 import { COURSE_STATUS_LABELS, SESSION_VISIBILITY_LABELS, USER_ROLE } from "@/lib/ui-constants";
-import { getStoredUserRole, setStoredUserRole, UserRole } from "@/lib/user-role";
+import { clearStoredUserRole, getStoredUserRole, setStoredUserRole, UserRole } from "@/lib/user-role";
 
 type CourseDetail = {
   id: string;
@@ -301,6 +301,16 @@ export function CourseDetailShell({ courseId }: CourseDetailShellProps) {
                   {isEnrolling ? "신청 중..." : enrollmentStatus === "enrolled" ? "신청 완료" : "신청하기"}
                 </button>
               ) : null}
+              <button
+                type="button"
+                onClick={() => {
+                  clearStoredUserRole();
+                  setResolvedRole(null);
+                }}
+                className="mt-1 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50"
+              >
+                역할 다시 선택
+              </button>
             </div>
           </div>
         </header>

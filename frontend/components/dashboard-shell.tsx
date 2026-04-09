@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { CourseCard } from "@/components/course-card";
 import { RoleSelectModal } from "@/components/role-select-modal";
 import { DASHBOARD_COPY, USER_ROLE } from "@/lib/ui-constants";
-import { getStoredUserRole, UserRole, setStoredUserRole } from "@/lib/user-role";
+import { clearStoredUserRole, getStoredUserRole, UserRole, setStoredUserRole } from "@/lib/user-role";
 
 type CourseSummary = {
   id: string;
@@ -177,18 +177,30 @@ export function DashboardShell() {
             </p>
           </div>
 
-          {isTeacher ? (
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            {isTeacher ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setCreateCourseError(null);
+                  setIsCreateModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              >
+                {DASHBOARD_COPY.teacherAction}
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => {
-                setCreateCourseError(null);
-                setIsCreateModalOpen(true);
+                clearStoredUserRole();
+                setResolvedRole(null);
               }}
-              className="inline-flex items-center justify-center rounded-full bg-zinc-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50"
             >
-              {DASHBOARD_COPY.teacherAction}
+              역할 다시 선택
             </button>
-          ) : null}
+          </div>
         </header>
 
         {isLoading ? (

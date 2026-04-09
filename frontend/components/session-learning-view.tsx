@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { SESSION_VISIBILITY_LABELS } from "@/lib/ui-constants";
 import { PdfViewer } from "@/components/pdf-viewer";
 import { VideoPlayer } from "@/components/video-player";
+import { clearStoredUserRole } from "@/lib/user-role";
 
 type SessionLearningViewProps = {
   sessionId: string;
@@ -98,6 +100,7 @@ export function SessionLearningView({
   sessionTitle,
   visibility,
 }: SessionLearningViewProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"material" | "recording">("material");
   const [materials, setMaterials] = useState<SessionMaterial[]>([]);
   const [recordings, setRecordings] = useState<SessionRecording[]>([]);
@@ -401,6 +404,16 @@ export function SessionLearningView({
             <div className="text-sm text-zinc-600 sm:text-right">
               <div>자료 {materials.length}개</div>
               <div>녹화본 {recordings.length}개</div>
+              <button
+                type="button"
+                onClick={() => {
+                  clearStoredUserRole();
+                  router.replace("/dashboard");
+                }}
+                className="mt-2 inline-flex items-center justify-center rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-50"
+              >
+                역할 다시 선택
+              </button>
             </div>
           </div>
         </header>

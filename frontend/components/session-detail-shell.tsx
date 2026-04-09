@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { RoleSelectModal } from "@/components/role-select-modal";
 import { SessionLearningView } from "@/components/session-learning-view";
 import { SESSION_VISIBILITY_LABELS, STATUS_LABELS, USER_ROLE } from "@/lib/ui-constants";
-import { getStoredUserRole, setStoredUserRole, UserRole } from "@/lib/user-role";
+import { clearStoredUserRole, getStoredUserRole, setStoredUserRole, UserRole } from "@/lib/user-role";
 
 const POLLING_INTERVALS_MS = [5000, 10000, 20000];
 const MAX_POLLING_ATTEMPTS = 120;
@@ -647,6 +647,16 @@ export function SessionDetailShell({ sessionId }: SessionDetailShellProps) {
               ) : null}
               {isTeacher ? (
                 <div className="mt-2 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearStoredUserRole();
+                      setResolvedRole(null);
+                    }}
+                    className="rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-800 transition hover:bg-zinc-50"
+                  >
+                    역할 다시 선택
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
